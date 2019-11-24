@@ -1,0 +1,13 @@
+{
+    "config": {
+        "abort": {
+            "already_setup": "Du kan endast konfigurera ett Miele-konto.",
+            "authorize_url_timeout": "Timeout vid skapandet av en auktoriseringsadress.",
+            "missing_configuration": "Miele-komponenten \u00e4r inte konfigurerad. V\u00e4nligen f\u00f6lj dokumentationen."
+        },
+        "create_entry": {
+            "default": "Lyckad autentisering med Miele."
+        },
+        "title": "Miele"
+    }
+}
