@@ -42,17 +42,9 @@ class MieleApi:
         )
 
     def get_devices(self) -> List[Device]:
-        """r = self.get("/devices")"""
-        """r.raise_for_status()"""
-
-        dicts = [
-            {'ident': 'ident1', 'state': 'state1'},
-            {'ident': 'ident2', 'state': 'state2'}
-        ]
-
-        """[Device(**d) for d in r.json()]"""
-        
-        return [Device(**d) for d in dicts]
+        r = self.get("/devices")
+        r.raise_for_status()
+        return [Device(**d) for k,d in r.json()]
 
     def get_device(self, device_id: str) -> Device:
         r = self.get("/devices/" + device_id)

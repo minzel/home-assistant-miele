@@ -1,82 +1,81 @@
-from typing import List, Optional, Any
+from typing import List, Any
 
 class TypeClass:
-    __slots__ = "key_localized", "value_raw", "value_localized", "unit"
+    __slots__ = "key_localized", "value_raw", "value_localized"
 
-    def __init__(self, key_localized: str, value_raw: Optional[int], value_localized: str, unit: Optional[str], **kwargs: Any):
+    def __init__(self, key_localized, value_raw, value_localized, **kwargs: Any):
         self.key_localized = key_localized
         self.value_raw = value_raw
         self.value_localized = value_localized
-        self.unit = unit
 
 class Temperature:
     __slots__ = "value_raw", "value_localized", "unit"
 
-    def __init__(self, value_raw: int, value_localized: Optional[int], unit: str, **kwargs: Any):
+    def __init__(self, value_raw, value_localized, unit, **kwargs: Any):
         self.value_raw = value_raw
         self.value_localized = value_localized
         self.unit = unit
 
 class RemoteEnable:
-    __slots__ = "full_remote_control", "smart_grid"
+    __slots__ = "fullRemoteControl", "smartGrid"
 
-    def __init__(self, full_remote_control: bool, smart_grid: bool, **kwargs: Any):
-        self.full_remote_control = full_remote_control
-        self.smart_grid = smart_grid
+    def __init__(self, fullRemoteControl: bool, smartGrid: bool, **kwargs: Any):
+        self.fullRemoteControl = fullRemoteControl
+        self.smartGrid = smartGrid
 
 class State:
-    __slots__ = "program_id", "status", "program_type", "program_phase", "remaining_time", "start_time", "target_temperature", "temperature", "signal_info", "signal_failure", "signal_door", "remote_enable", "light", "elapsed_time", "spinning_speed", "drying_step", "ventilation_step", "plate_step"
+    __slots__ = "programId", "status", "programType", "programPhase", "remainingTime", "startTime", "targetTemperature", "temperature", "signalInfo", "signalFailure", "signalDoor", "remoteEnable", "light", "elapsedTime", "spinningSpeed", "dryingStep", "ventilationStep", "plateStep"
 
-    def __init__(self, program_id: TypeClass, status: TypeClass, program_type: TypeClass, program_phase: TypeClass, remaining_time: List[int], start_time: List[int], target_temperature: List[Temperature], temperature: List[Temperature], signal_info: bool, signal_failure: bool, signal_door: bool, remote_enable: RemoteEnable, light: int, elapsed_time: List[int], spinning_speed: TypeClass, drying_step: TypeClass, ventilation_step: TypeClass, plate_step: List[Any], **kwargs: Any):
-        self.program_id = program_id
-        self.status = status
-        self.program_type = program_type
-        self.program_phase = program_phase
-        self.remaining_time = remaining_time
-        self.start_time = start_time
-        self.target_temperature = target_temperature
-        self.temperature = temperature
-        self.signal_info = signal_info
-        self.signal_failure = signal_failure
-        self.signal_door = signal_door
-        self.remote_enable = remote_enable
+    def __init__(self, ProgramID, status, programType, programPhase, remainingTime, startTime, targetTemperature, temperature, signalInfo, signalFailure, signalDoor, remoteEnable, light, elapsedTime, spinningSpeed, dryingStep, ventilationStep, plateStep, **kwargs: Any):
+        self.programId = TypeClass(**ProgramID)
+        self.status = TypeClass(**status)
+        self.programType = TypeClass(**programType)
+        self.programPhase = TypeClass(**programPhase)
+        self.remainingTime = remainingTime
+        self.startTime = startTime
+        self.targetTemperature = [Temperature(**t) for t in targetTemperature]
+        self.temperature = [Temperature(**t) for t in temperature]
+        self.signalInfo = signalInfo
+        self.signalFailure = signalFailure
+        self.signalDoor = signalDoor
+        self.remoteEnable = RemoteEnable(**remoteEnable)
         self.light = light
-        self.elapsed_time = elapsed_time
-        self.spinning_speed = spinning_speed
-        self.drying_step = drying_step
-        self.ventilation_step = ventilation_step
-        self.plate_step = plate_step
+        self.elapsedTime = elapsedTime
+        self.spinningSpeed = TypeClass(**spinningSpeed)
+        self.dryingStep = TypeClass(**dryingStep)
+        self.ventilationStep = TypeClass(**ventilationStep)
+        self.plateStep = plateStep
 
 class XkmIdentLabel:
-    __slots__ = "tech_type", "release_version"
+    __slots__ = "techType", "releaseVersion"
 
-    def __init__(self, tech_type: str, release_version: str, **kwargs: Any):
-        self.tech_type = tech_type
-        self.release_version = release_version
+    def __init__(self, techType, releaseVersion, **kwargs: Any):
+        self.techType = techType
+        self.releaseVersion = releaseVersion
 
 class DeviceIdentLabel:
-    __slots__ = "fab_number", "fab_index", "tech_type", "mat_number", "swids"
+    __slots__ = "fabNumber", "fabIndex", "techType", "matNumber", "swids"
 
-    def __init__(self, fab_number: str, fab_index: int, tech_type: str, mat_number: int, swids: List[int], **kwargs: Any):
-        self.fab_number = fab_number
-        self.fab_index = fab_index
-        self.tech_type = tech_type
-        self.mat_number = mat_number
+    def __init__(self, fabNumber, fabIndex, techType, matNumber, swids: List[int], **kwargs: Any):
+        self.fabNumber = fabNumber
+        self.fabIndex = fabIndex
+        self.techType = techType
+        self.matNumber = matNumber
         self.swids = swids
 
 class Ident:
-    __slots__ = "type", "device_name", "device_ident_label", "xkm_ident_label"
+    __slots__ = "type", "deviceName", "deviceIdentLabel", "xkmIdentLabel"
 
-    def __init__(self, type: TypeClass, device_name: str, device_ident_label: DeviceIdentLabel, xkm_ident_label: XkmIdentLabel, **kwargs: Any):
-        self.type = type
-        self.device_name = device_name
-        self.device_ident_label = device_ident_label
-        self.xkm_ident_label = xkm_ident_label
+    def __init__(self, type, deviceName, deviceIdentLabel, xkmIdentLabel, **kwargs: Any):
+        self.type = TypeClass(**type)
+        self.deviceName = deviceName
+        self.deviceIdentLabel = DeviceIdentLabel(**deviceIdentLabel)
+        self.xkmIdentLabel = XkmIdentLabel(**xkmIdentLabel)
 
 class Device:
     __slots__ = "ident", "state"
 
-    def __init__(self, *, ident: str, state: str, **kwargs: Any):
+    def __init__(self, *, ident, state, **kwargs: Any):
+        self.ident = Ident(**ident)
+        self.state = State(**state)
 
-        self.ident = ident
-        self.state = state

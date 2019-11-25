@@ -115,12 +115,12 @@ class MieleEntity(Entity):
     @property
     def unique_id(self):
         """Return the unique id base on the id returned by Miele."""
-        return self.device.ident
+        return self.device.ident.deviceIdentLabel.fabNumber
 
     @property
     def name(self):
         """Return the name of the device."""
-        return self.device.state
+        return self.device.ident.type.value_localized
 
     @property
     def device_info(self):
@@ -139,7 +139,7 @@ class MieleEntity(Entity):
         """Update the device with the latest data."""
         await update_all_devices(self.hass)
         devices = self.hass.data[DOMAIN][DEVICES]
-        self.device = next((d for d in devices if d.ident == self.device.ident), self.device)
+        self.device = next((d for d in devices if d.ident.deviceIdentLabel.fabNumber == self.device.ident.deviceIdentLabel.fabNumber), self.device)
 
 @Throttle(SCAN_INTERVAL)
 async def update_all_devices(hass):
