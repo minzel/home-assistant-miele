@@ -43,7 +43,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-MIELE_COMPONENTS = ["cover"]
+MIELE_COMPONENTS = ["sensor"]
 
 async def async_setup(hass, config):
     print("async_setup :: begin")
@@ -120,7 +120,7 @@ class MieleEntity(Entity):
     @property
     def name(self):
         """Return the name of the device."""
-        return self.device.ident.type.value_localized
+        return self.device.ident.deviceIdentLabel.fabNumber
 
     @property
     def device_info(self):
@@ -130,7 +130,7 @@ class MieleEntity(Entity):
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self.name,
-            "model": "TODO",
+            "model": self.device.ident.deviceIdentLabel.techType,
             # For the moment, Miele only returns their own device.
             "manufacturer": "Miele",
         }

@@ -2,23 +2,19 @@
 Support for Miele Devices.
 """
 
-from homeassistant.components.cover import CoverDevice
-
 from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, DEVICES, API
-
-from .base import MieleDevice
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Miele device platform."""
 
-    def get_covers():
+    def get_sensors():
         devices = hass.data[DOMAIN][DEVICES]
         return [
-            MieleCover(cover, hass.data[DOMAIN][API])
-            for cover in devices
+            MieleSensor(miele, hass.data[DOMAIN][API])
+            for miele in devices
         ]
 
-    async_add_entities(await hass.async_add_executor_job(get_covers), True)
+    async_add_entities(await hass.async_add_executor_job(get_sensors), True)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Old way of setting up platform.
@@ -27,16 +23,23 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     """
     pass
 
-
-class MieleCover(MieleEntity, CoverDevice):
-    """Representation of a Miele cover device."""
+class MieleDevice:
+    __slots__ = "device", "api"
 
     def __init__(self, device, api):
-        """Initialize the Miele device."""
+        self.device = device
+        self.api = api
+
+class MieleSensor(MieleEntity):
+
+    def __init__(self, device, api):
         super().__init__(device, api)
-        self.cover = MieleDevice(self.device, self.api)
+        self.miele = MieleDevice(self.device, self.api)
  
+    @property
+    def state(self):
+        return self.device.state.status.value_localized
+
     async def async_update(self):
-        """Update the device with the latest data."""
         await super().async_update()
-        self.cover = MieleDevice(self.device, self.api)
+        self.miele = MieleDevice(self.device, self.api)
