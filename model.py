@@ -1,4 +1,60 @@
 from typing import List, Any
+from enum import Enum, unique
+
+@unique
+class Type(Enum):
+    WASHING_MACHINE = 1
+    TUMBLE_DRYER = 2
+    DISHWASHER = 7
+    DISHWASHER_SEMI_PROF = 8
+    OVEN = 12
+    OVEN_MICROWAVE = 13
+    HOB_HIGHLIGHT = 14
+    STEAM_OVEN = 15
+    MICROWAVE = 16
+    COFFEE_SYSTEM = 17
+    HOOD = 18
+    FRIDGE = 19
+    FREEZER = 20
+    FRIDGE_FREEZER_COMBINATION = 21
+    VACUUM_CLEANER = 23
+    WASHER_DRYER = 24
+    DISH_WARMER = 25
+    HOB_INDUCTION = 27
+    HOB_GAS = 28
+    STEAM_OVEN_COMBINATION = 31
+    WINE_CABINET = 32
+    WINE_CONDITIONING_UNIT = 33
+    WINE_STORAGE_CONDITIONING_UNIT = 34
+    DOUBLE_OVEN = 39
+    DOUBLE_STEAM_OVEN = 40
+    DOUBLE_STEAM_OVEN_COMBINATION = 41
+    DOUBLE_MICROWAVE = 42
+    DOUBLE_MICROWAVE_OVEN = 43
+    STEAM_OVEN_MICROWAVE_COMBINATION = 45
+    VACUUM_DRAWER = 48
+    DIALOGOVEN = 67
+    WINE_CABINET_FREEZER_COMBINATION = 68
+
+@unique
+class Status(Enum):
+    OFF = 1
+    ON = 2
+    PROGRAMMED = 3
+    PROGRAMMED_WAITING_TO_START = 4
+    RUNNING = 5
+    PAUSE = 6
+    END_PROGRAMMED = 7
+    FAILURE = 8
+    PROGRAMME_INTERRUPTED = 9
+    IDLE = 10
+    RINSE_HOLD = 11
+    SERVICE = 12
+    SUPERFREEZING = 13
+    SUPERCOOLING = 14
+    SUPERHEATING = 15
+    SUPERCOOLING_SUPERFREEZING = 146
+    NOT_CONNECTED = 255
 
 class TypeClass:
     __slots__ = "key_localized", "value_raw", "value_localized"
@@ -78,4 +134,7 @@ class Device:
     def __init__(self, *, ident, state, **kwargs: Any):
         self.ident = Ident(**ident)
         self.state = State(**state)
+    
+    def getState():
+        return Status(self.state.status.value_raw).name
 

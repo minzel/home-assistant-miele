@@ -4,6 +4,8 @@ Support for Miele Devices.
 
 from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, DEVICES, API
 
+from .enum import Status
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Miele device platform."""
 
@@ -38,7 +40,7 @@ class MieleSensor(MieleEntity):
  
     @property
     def state(self):
-        return self.device.state.status.value_localized
+        return self.device.getState()
 
     async def async_update(self):
         await super().async_update()
