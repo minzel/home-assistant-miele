@@ -1,68 +1,106 @@
 from typing import List, Any
 from enum import Enum, unique
+import sys
 
 @unique
 class Type(Enum):
-    WASHING_MACHINE = 1
-    TUMBLE_DRYER = 2
-    DISHWASHER = 7
-    DISHWASHER_SEMI_PROF = 8
-    OVEN = 12
-    OVEN_MICROWAVE = 13
-    HOB_HIGHLIGHT = 14
-    STEAM_OVEN = 15
-    MICROWAVE = 16
-    COFFEE_SYSTEM = 17
-    HOOD = 18
-    FRIDGE = 19
-    FREEZER = 20
-    FRIDGE_FREEZER_COMBINATION = 21
-    VACUUM_CLEANER = 23
-    WASHER_DRYER = 24
-    DISH_WARMER = 25
-    HOB_INDUCTION = 27
-    HOB_GAS = 28
-    STEAM_OVEN_COMBINATION = 31
-    WINE_CABINET = 32
-    WINE_CONDITIONING_UNIT = 33
-    WINE_STORAGE_CONDITIONING_UNIT = 34
-    DOUBLE_OVEN = 39
-    DOUBLE_STEAM_OVEN = 40
-    DOUBLE_STEAM_OVEN_COMBINATION = 41
-    DOUBLE_MICROWAVE = 42
-    DOUBLE_MICROWAVE_OVEN = 43
-    STEAM_OVEN_MICROWAVE_COMBINATION = 45
-    VACUUM_DRAWER = 48
-    DIALOGOVEN = 67
-    WINE_CABINET_FREEZER_COMBINATION = 68
+    washing_machine = 1
+    tumble_dryer = 2
+    dishwasher = 7
+    dishwasher_semi_prof = 8
+    oven = 12
+    oven_microwave = 13
+    hob_highlight = 14
+    steam_oven = 15
+    microwave = 16
+    coffee_system = 17
+    hood = 18
+    fridge = 19
+    freezer = 20
+    fridge_freezer_combination = 21
+    vacuum_cleaner = 23
+    washer_dryer = 24
+    dish_warmer = 25
+    hob_induction = 27
+    hob_gas = 28
+    steam_oven_combination = 31
+    wine_cabinet = 32
+    wine_conditioning_unit = 33
+    wine_storage_conditioning_unit = 34
+    double_oven = 39
+    double_steam_oven = 40
+    double_steam_oven_combination = 41
+    double_microwave = 42
+    double_microwave_oven = 43
+    steam_oven_microwave_combination = 45
+    vacuum_drawer = 48
+    dialogoven = 67
+    wine_cabinet_freezer_combination = 68
 
 @unique
 class Status(Enum):
-    OFF = 1
-    ON = 2
-    PROGRAMMED = 3
-    PROGRAMMED_WAITING_TO_START = 4
-    RUNNING = 5
-    PAUSE = 6
-    END_PROGRAMMED = 7
-    FAILURE = 8
-    PROGRAMME_INTERRUPTED = 9
-    IDLE = 10
-    RINSE_HOLD = 11
-    SERVICE = 12
-    SUPERFREEZING = 13
-    SUPERCOOLING = 14
-    SUPERHEATING = 15
-    SUPERCOOLING_SUPERFREEZING = 146
-    NOT_CONNECTED = 255
+    off = 1
+    on = 2
+    programmed = 3
+    programmed_waiting_to_start = 4
+    running = 5
+    pause = 6
+    end_programmed = 7
+    failure = 8
+    programme_interrupted = 9
+    idle = 10
+    rinse_hold = 11
+    service = 12
+    superfreezing = 13
+    supercooling = 14
+    superheating = 15
+    supercooling_superfreezing = 146
+    not_connected = 255
+
+@unique
+class ProgramType(Enum):
+    normal_operation_mode = 0
+    own_program = 1
+    automatic_program = 2
+    cleaning_care_program = 3
+
+programPhase = {
+    # washing machine
+    256: "not_running",
+    257: "pre_wash",
+    258: "soak",
+    259: "pre_wash",
+    260: "main_wash",
+    261: "rinse",
+    262: "rinse_hold",
+    263: "main_wash",
+    264: "cooling_down",
+    265: "drain",
+    266: "spin",
+    267: "anti_crease",
+    268: "finished",
+    269: "venting",
+    270: "starch_stop",
+    271: "freshen_up_moisten",
+    272: "steam_smoothing",
+    279: "hygiene",
+    280: "drying",
+    285: "disinfection",
+    295: "steam_smoothing"
+}
 
 class TypeClass:
-    __slots__ = "key_localized", "value_raw", "value_localized"
+    __slots__ = "key_localized", "value_raw", "value_localized", "value"
 
     def __init__(self, key_localized, value_raw, value_localized, **kwargs: Any):
         self.key_localized = key_localized
         self.value_raw = value_raw
         self.value_localized = value_localized
+
+        self.value = str_to_class(programPhase).get(value_raw, "unknown")
+
+    def str_to_class(classname):
+        return getattr(sys.modules[__name__], classname)
 
 class Temperature:
     __slots__ = "value_raw", "value_localized", "unit"
@@ -102,6 +140,13 @@ class State:
         self.ventilationStep = TypeClass(**ventilationStep)
         self.plateStep = plateStep
 
+    def __iter__(self):
+        for prop in dir(self):
+            if(prop[:2] != "__"):
+                value = getattr(self, prop)
+                if(isinstance(value,TypeClass)):
+                    yield prop, value.value
+
 class XkmIdentLabel:
     __slots__ = "techType", "releaseVersion"
 
@@ -134,7 +179,15 @@ class Device:
     def __init__(self, *, ident, state, **kwargs: Any):
         self.ident = Ident(**ident)
         self.state = State(**state)
-    
-    def getState():
-        return Status(self.state.status.value_raw).name
 
+    def getId(self):
+        return self.ident.deviceIdentLabel.fabNumber
+
+    def getName(self):
+        return "{} [{}]".format(self.ident.type.value_localized, self.getId())
+
+    def getType(self):
+        return Type(self.ident.type.value_raw).name
+
+    def getState(self):
+        return Status(self.state.status.value_raw).name

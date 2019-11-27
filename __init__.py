@@ -30,6 +30,11 @@ SCAN_INTERVAL = timedelta(seconds=60)
 
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
+CONF_OBJECT_ID_PREFIX = 'id_prefix'
+
+DEFAULT_OBJECT_ID_PREFIX = 'miele'
+
+MIELE_CONFIG = 'miele_cfg'
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -37,6 +42,7 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Required(CONF_CLIENT_ID): cv.string,
                 vol.Required(CONF_CLIENT_SECRET): cv.string,
+                vol.Optional(CONF_OBJECT_ID_PREFIX, default=DEFAULT_OBJECT_ID_PREFIX): cv.string,
             }
         )
     },
@@ -46,8 +52,8 @@ CONFIG_SCHEMA = vol.Schema(
 MIELE_COMPONENTS = ["sensor"]
 
 async def async_setup(hass, config):
-    print("async_setup :: begin")
     hass.data[DOMAIN] = {}
+    hass.data[MIELE_CONFIG] = config.get(DOMAIN, {})
 
     if DOMAIN not in config:
         return True
@@ -63,12 +69,9 @@ async def async_setup(hass, config):
             "https://api.mcs3.miele.com/thirdparty/token",
         ),
     )
-    print("async_setup :: end")
     return True
 
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
-    """Set up Miele from a config entry."""
-    print("update_all_devices :: begin")
     # Backwards compat
     if "auth_implementation" not in entry.data:
         hass.config_entries.async_update_entry(
@@ -82,17 +85,16 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
     hass.data[DOMAIN][API] = api.ConfigEntryMieleApi(hass, entry, implementation)
 
     await update_all_devices(hass)
-
+    
+    # create sensors
     for component in MIELE_COMPONENTS:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, component)
         )
-    print("update_all_devices :: end")
+
     return True
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry):
-    """Unload a config entry."""
-    print("async_unload_entry :: begin")
     hass.data[DOMAIN].pop(API, None)
 
     await asyncio.gather(
@@ -101,45 +103,7 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry):
             for component in MIELE_COMPONENTS
         ]
     )
-    print("async_unload_entry  :: end")
     return True
-
-class MieleEntity(Entity):
-    """Representation of a generic Miele device."""
-
-    def __init__(self, device, miele_api):
-        """Initialize the Miele device."""
-        self.device = device
-        self.api = miele_api
-
-    @property
-    def unique_id(self):
-        """Return the unique id base on the id returned by Miele."""
-        return self.device.ident.deviceIdentLabel.fabNumber
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self.device.ident.deviceIdentLabel.fabNumber
-
-    @property
-    def device_info(self):
-        """Return device specific attributes.
-        Implemented by platform classes.
-        """
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self.name,
-            "model": self.device.ident.deviceIdentLabel.techType,
-            # For the moment, Miele only returns their own device.
-            "manufacturer": "Miele",
-        }
-
-    async def async_update(self):
-        """Update the device with the latest data."""
-        await update_all_devices(self.hass)
-        devices = self.hass.data[DOMAIN][DEVICES]
-        self.device = next((d for d in devices if d.ident.deviceIdentLabel.fabNumber == self.device.ident.deviceIdentLabel.fabNumber), self.device)
 
 @Throttle(SCAN_INTERVAL)
 async def update_all_devices(hass):
@@ -149,3 +113,54 @@ async def update_all_devices(hass):
         data[DEVICES] = await hass.async_add_executor_job(data[API].get_devices)
     except HTTPError as err:
         _LOGGER.warning("Cannot update devices: %s", err.response.status_code)
+
+class MieleEntity(Entity):
+    def __init__(self, device, miele_api, hass):
+        self.device = device
+        self.api = miele_api
+
+        config = hass.data[MIELE_CONFIG]
+
+        prefix = config.get(CONF_OBJECT_ID_PREFIX)
+        self.unqiue_id = prefix + "_" + self.device.getType() + "_" + self.device.getId()
+
+    @property
+    def unique_id(self):
+        return self.unqiue_id
+
+    @property
+    def name(self):
+        return self.device.getName()
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self.unique_id)},
+            "name": self.name,
+            "model": self.device.ident.deviceIdentLabel.techType,
+            "manufacturer": "Miele"
+        }
+
+    @property
+    def device_state_attributes(self):
+        attrs = {
+            'model': self.device.ident.deviceIdentLabel.techType,
+            'serial_number': self.device.getId(),
+            'gateway_type': self.device.ident.xkmIdentLabel.techType,
+            'gateway_version' : self.device.ident.xkmIdentLabel.releaseVersion
+        }
+
+        for key, value in self.device.state:
+            attrs[key] = value
+
+        return attrs
+
+    async def async_update(self):
+        await update_all_devices(self.hass)
+        devices = self.hass.data[DOMAIN][DEVICES]
+        self.device = next((d for d in devices if d.getId() == self.device.getId()), self.device)
+
+class MieleDevice:
+    def __init__(self, device, api):
+        self.device = device
+        self.api = api
