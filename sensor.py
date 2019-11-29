@@ -32,7 +32,7 @@ class MieleSensor(MieleEntity):
  
     @property
     def state(self):
-        return self.device.getState()
+        return self.device.state
 
     async def async_update(self):
         await super().async_update()

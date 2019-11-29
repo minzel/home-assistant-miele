@@ -122,7 +122,7 @@ class MieleEntity(Entity):
         config = hass.data[MIELE_CONFIG]
 
         prefix = config.get(CONF_OBJECT_ID_PREFIX)
-        self.unqiue_id = prefix + "_" + self.device.getType() + "_" + self.device.getId()
+        self.unqiue_id = "{0}_{1}_{2}".format(prefix, self.device.type, self.device.id)
 
     @property
     def unique_id(self):
@@ -130,7 +130,7 @@ class MieleEntity(Entity):
 
     @property
     def name(self):
-        return self.device.getName()
+        return self.unqiue_id
 
     @property
     def device_info(self):
@@ -145,7 +145,7 @@ class MieleEntity(Entity):
     def device_state_attributes(self):
         attrs = {
             'model': self.device.ident.deviceIdentLabel.techType,
-            'serial_number': self.device.getId(),
+            'serial_number': self.device.id,
             'gateway_type': self.device.ident.xkmIdentLabel.techType,
             'gateway_version' : self.device.ident.xkmIdentLabel.releaseVersion
         }
@@ -158,7 +158,7 @@ class MieleEntity(Entity):
     async def async_update(self):
         await update_all_devices(self.hass)
         devices = self.hass.data[DOMAIN][DEVICES]
-        self.device = next((d for d in devices if d.getId() == self.device.getId()), self.device)
+        self.device = next((d for d in devices if d.id == self.device.id), self.device)
 
 class MieleDevice:
     def __init__(self, device, api):

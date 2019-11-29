@@ -9,7 +9,7 @@ from pymfy.api.devices.category import Category
 from pymfy.api.model import Command, Site, Device
 """
 
-from .model import TypeClass, Temperature, RemoteEnable, State, XkmIdentLabel, DeviceIdentLabel, Ident, Device
+from .model import Device
 
 BASE_URL = "https://api.mcs3.miele.com/v1"
 
@@ -42,14 +42,14 @@ class MieleApi:
         )
 
     def get_devices(self) -> List[Device]:
-        r = self.get("/devices")
+        r = self.get("/devices/?language=de")
         r.raise_for_status()
-        return [Device(**d) for k,d in r.json().items()]
+        return [Device(k, **d) for k,d in r.json().items()]
 
     def get_device(self, device_id: str) -> Device:
-        r = self.get("/devices/" + device_id)
+        r = self.get("/devices/?language=de" + device_id)
         r.raise_for_status()
-        return Device(**r.json())
+        return Device(device_id, **r.json())
 
     def get(self, path: str) -> Response:
         """Fetch a URL from the Miele API."""
