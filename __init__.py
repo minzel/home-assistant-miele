@@ -10,15 +10,13 @@ import voluptuous as vol
 from requests import HTTPError
 
 from homeassistant.helpers import config_validation as cv, config_entry_oauth2_flow
-from . import config_flow
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import Throttle
 from .const import DOMAIN
 
-from . import api
-from . import miele_api
+from . import api, miele_api, config_flow
 
 API = "api"
 
@@ -31,10 +29,10 @@ SCAN_INTERVAL = timedelta(seconds=60)
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
 CONF_LANGUAGE = "language"
-CONF_OBJECT_ID_PREFIX = 'id_prefix'
+CONF_OBJECT_PREFIX = 'prefix'
 
 DEFAULT_LANGUAGE = 'en'
-DEFAULT_OBJECT_ID_PREFIX = 'miele'
+DEFAULT_OBJECT_PREFIX = 'miele'
 
 MIELE_CONFIG = 'miele_cfg'
 
@@ -44,8 +42,8 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Required(CONF_CLIENT_ID): cv.string,
                 vol.Required(CONF_CLIENT_SECRET): cv.string,
-                vol.Optional(CONF_OBJECT_ID_PREFIX, default=DEFAULT_OBJECT_ID_PREFIX): cv.string,
                 vol.Optional(CONF_LANGUAGE, default=DEFAULT_LANGUAGE): cv.string,
+                vol.Optional(CONF_OBJECT_PREFIX, default=DEFAULT_OBJECT_PREFIX): cv.string,
             }
         )
     },
@@ -131,7 +129,7 @@ class MieleEntity(Entity):
 
         config = hass.data[MIELE_CONFIG]
 
-        prefix = config.get(CONF_OBJECT_ID_PREFIX)
+        prefix = config.get(CONF_OBJECT_PREFIX)
         self.unqiue_id = "{0}_{1}_{2}".format(
             prefix, self.device.type, self.device.id)
 
