@@ -2,7 +2,7 @@
     "domain": "miele",
     "name": "Miele@home",
     "config_flow": true,
-    "documentation": "https://www.home-assistant.io/integrations/miele",
+    "documentation": "https://github.com/minzel/home-assistant-miele",
     "dependencies": ["http"],
     "codeowners": ["@minzel"],
     "requirements": ["inflection==0.3.1"]
