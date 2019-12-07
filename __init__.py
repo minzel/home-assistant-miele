@@ -118,7 +118,8 @@ async def update_all_devices(hass):
     """Update all the devices."""
     try:
         data = hass.data[DOMAIN]
-        data[DEVICES] = await hass.async_add_executor_job(data[API].get_devices)
+        config = hass.data[MIELE_CONFIG]
+        data[DEVICES] = await hass.async_add_executor_job(data[API].get_devices, config.get(CONF_LANGUAGE))
     except HTTPError as err:
         _LOGGER.warning("Cannot update devices: %s", err.response.status_code)
 

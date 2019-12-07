@@ -4,11 +4,6 @@ from requests import Response
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import TokenExpiredError
 
-"""
-from pymfy.api.devices.category import Category
-from pymfy.api.model import Command, Site, Device
-"""
-
 from .model import Device
 
 BASE_URL = "https://api.mcs3.miele.com/v1"
@@ -43,22 +38,15 @@ class MieleApi:
             token_updater=token_updater,
         )
 
-    def get_devices(self) -> List[Device]:
-        r = self.get("/devices/?language=de")
+    def get_devices(self, language) -> List[Device]:
+        r = self.get("/devices/?language=" + language)
         r.raise_for_status()
         return [Device(k, **d) for k, d in r.json().items()]
 
-    def get_device(self, device_id: str) -> Device:
-        r = self.get("/devices/?language=de" + device_id)
-        r.raise_for_status()
-        return Device(device_id, **r.json())
-
     def get(self, path: str) -> Response:
-        """Fetch a URL from the Miele API."""
         return self._request("get", path)
 
     def post(self, path: str, *, json: Dict[str, Any]) -> Response:
-        """Post data to the Miele API."""
         return self._request("post", path, json=json)
 
     def get_authorization_url(self, state: Optional[str] = None) -> Tuple[str, str]:
@@ -67,12 +55,6 @@ class MieleApi:
     def request_token(
         self, authorization_response: Optional[str] = None, code: Optional[str] = None
     ) -> Dict[str, str]:
-        """Generic method for fetching a Miele access token.
-        :param authorization_response: Authorization response URL, the callback
-                                       URL of the request back to you.
-        :param code: Authorization code
-        :return: A token dict
-        """
         return self._oauth.fetch_token(
             MIELE_TOKEN,
             authorization_response=authorization_response,
@@ -81,7 +63,6 @@ class MieleApi:
         )
 
     def refresh_tokens(self) -> Dict[str, Union[str, int]]:
-        """Refresh and return new Miele tokens."""
         token = self._oauth.refresh_token(MIELE_REFRESH)
 
         if self.token_updater is not None:
