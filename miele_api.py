@@ -17,6 +17,7 @@ MIELE_OAUTH = "https://api.mcs3.miele.com/thirdparty/login"
 MIELE_TOKEN = "https://api.mcs3.miele.com/thirdparty/token"
 MIELE_REFRESH = "https://api.mcs3.miele.com/thirdparty/token"
 
+
 class MieleApi:
     def __init__(
         self,
@@ -31,7 +32,8 @@ class MieleApi:
         self.client_secret = client_secret
         self.token_updater = token_updater
 
-        extra = {"client_id": self.client_id, "client_secret": self.client_secret}
+        extra = {"client_id": self.client_id,
+                 "client_secret": self.client_secret}
 
         self._oauth = OAuth2Session(
             client_id=client_id,
@@ -44,7 +46,7 @@ class MieleApi:
     def get_devices(self) -> List[Device]:
         r = self.get("/devices/?language=de")
         r.raise_for_status()
-        return [Device(k, **d) for k,d in r.json().items()]
+        return [Device(k, **d) for k, d in r.json().items()]
 
     def get_device(self, device_id: str) -> Device:
         r = self.get("/devices/?language=de" + device_id)

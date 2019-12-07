@@ -4,6 +4,7 @@ Support for Miele Devices.
 
 from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, MieleDevice, DEVICES, API
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Miele device platform."""
 
@@ -16,6 +17,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities(await hass.async_add_executor_job(get_sensors), True)
 
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Old way of setting up platform.
     Can only be called when a user accidentally mentions the platform in their
@@ -23,13 +25,14 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     """
     pass
 
+
 class MieleSensor(MieleEntity):
 
     def __init__(self, device, hass):
-        api = hass.data[DOMAIN][API];
+        api = hass.data[DOMAIN][API]
         super().__init__(device, api, hass)
         self.miele = MieleDevice(self.device, self.api)
- 
+
     @property
     def state(self):
         return self.device.state

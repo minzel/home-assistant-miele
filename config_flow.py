@@ -10,6 +10,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @config_entries.HANDLERS.register(DOMAIN)
 class MieleFlowHandler(config_entry_oauth2_flow.AbstractOAuth2FlowHandler):
     """Config flow to handle Miele OAuth2 authentication."""

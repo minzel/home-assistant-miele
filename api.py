@@ -10,6 +10,7 @@ from . import miele_api
 from homeassistant import core, config_entries
 from homeassistant.helpers import config_entry_oauth2_flow
 
+
 class ConfigEntryMieleApi(miele_api.MieleApi):
     """Provide a Miele API tied into an OAuth2 based config entry."""
 

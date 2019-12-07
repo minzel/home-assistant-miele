@@ -3,6 +3,7 @@ from datetime import time
 from enum import Enum, unique
 from inflection import underscore
 
+
 @unique
 class Type(Enum):
     washing_machine = 1
@@ -37,6 +38,7 @@ class Type(Enum):
     vacuum_drawer = 48
     dialogoven = 67
     wine_cabinet_freezer_combination = 68
+
 
 Status = {
     1: "off",
@@ -143,6 +145,7 @@ VentilationStep = {
     4: "step_4"
 }
 
+
 class BaseType:
     __slots__ = "key_localized", "value_raw", "value_localized", "value"
 
@@ -150,11 +153,12 @@ class BaseType:
         self.key_localized = key_localized
         self.value_raw = value_raw
         self.value_localized = value_localized
-  
+
         if(type == "Type"):
-          self.value = globals()[type](self.value_raw).name
+            self.value = globals()[type](self.value_raw).name
         else:
-          self.value = globals()[type].get(self.value_raw, "unknown")
+            self.value = globals()[type].get(self.value_raw, "unknown")
+
 
 class Temperature:
     __slots__ = "value_raw", "value_localized", "unit"
@@ -164,15 +168,17 @@ class Temperature:
         self.value_localized = value_localized
         self.unit = unit
 
+
 class Time:
     __slots__ = "hour", "minute"
 
     def __init__(self, hour, minute):
-      self.hour = hour
-      self.minute = minute
-    
+        self.hour = hour
+        self.minute = minute
+
     def __str__(self):
-      return time(self.hour, self.minute).strftime('%H:%M')
+        return time(self.hour, self.minute).strftime('%H:%M')
+
 
 class RemoteEnable:
     __slots__ = "fullRemoteControl", "smartGrid"
@@ -182,34 +188,36 @@ class RemoteEnable:
         self.smartGrid = smartGrid
 
     def __iter__(self):
-      for prop in dir(self):
-        if(prop[:2] != "__"):
-          yield underscore(prop), getattr(self, prop)
+        for prop in dir(self):
+            if(prop[:2] != "__"):
+                yield underscore(prop), getattr(self, prop)
+
 
 class State():
     __slots__ = "programId", "status", "programType", "programPhase", "remainingTime", "startTime", "targetTemperature", "temperature", "signalInfo", "signalFailure", "signalDoor", "remoteEnable", "light", "elapsedTime", "spinningSpeed", "dryingStep", "ventilationStep", "plateStep"
 
     def __init__(self, deviceType, *, ProgramID, status, programType, programPhase, remainingTime, startTime, targetTemperature, temperature, signalInfo, signalFailure, signalDoor, remoteEnable, light, elapsedTime, spinningSpeed, dryingStep, ventilationStep, plateStep, **kwargs: Any):
 
-        self.programId = BaseType("Status",**ProgramID)
-        self.status = BaseType("Status",**status)
-        self.programType = BaseType("ProgramType",**programType)
-        self.programPhase = BaseType("ProgramPhase",**programPhase)
+        self.programId = BaseType("Status", **ProgramID)
+        self.status = BaseType("Status", **status)
+        self.programType = BaseType("ProgramType", **programType)
+        self.programPhase = BaseType("ProgramPhase", **programPhase)
         self.remainingTime = Time(*remainingTime)
         self.startTime = Time(*startTime)
-        
+
         self.targetTemperature = []
         targetTemperatures = [Temperature(**t) for t in targetTemperature]
         for i in range(len(targetTemperatures)):
-          # if a temperature is not used/existing, its corresponding value is set to -32768.
-          if(targetTemperatures[i].value_raw != -32768):
-            self.targetTemperature.append(targetTemperatures[i])
-        
+                # if a temperature is not used/existing, its corresponding value is set to -32768.
+            if(targetTemperatures[i].value_raw != -32768):
+                self.targetTemperature.append(targetTemperatures[i])
+
         self.temperature = []
         for temperatureObj in [Temperature(**t) for t in temperature]:
-          if(temperatureObj.value_raw != -32768):
-            self.temperature.append(temperatureObj)
-        
+            # if a temperature is not used/existing, its corresponding value is set to -32768.
+            if(temperatureObj.value_raw != -32768):
+                self.temperature.append(temperatureObj)
+
         self.signalInfo = signalInfo
         self.signalFailure = signalFailure
         self.signalDoor = signalDoor
@@ -219,32 +227,35 @@ class State():
         self.plateStep = plateStep
         self.spinningSpeed = BaseType("Status", **spinningSpeed)
         # this field is only valid for tumble dryers (2) and washer-dryer (24) combinations
-        self.dryingStep = BaseType("DryingStep", **dryingStep) if deviceType in [2, 24] else None
+        self.dryingStep = BaseType(
+            "DryingStep", **dryingStep) if deviceType in [2, 24] else None
         # this field is only valid for hoods (18)
-        self.ventilationStep = BaseType("VentilationStep", **ventilationStep) if deviceType in [18] else None
+        self.ventilationStep = BaseType(
+            "VentilationStep", **ventilationStep) if deviceType in [18] else None
 
     def __str__(self):
         return self.status.value
 
     def __iter__(self):
-      for prop in dir(self):
-        if(prop[:2] != "__"):
-          value = getattr(self, prop)
-          prop = underscore(prop)
-          if(any([isinstance(value, bool), isinstance(value, int)])):
-            yield prop, value
-          elif(isinstance(value, BaseType)):
-            yield prop, value.value_localized
-          elif(isinstance(value, Time)):
-            yield prop, str(value)
-          elif(isinstance(value, RemoteEnable)):
-            for v in value:
-              yield v
-          elif (isinstance(value, list)):
-            for i in range(len(value)):
-                key = "{0}_{1}".format(prop, (i+1)) if len(value) > 1 else prop
-                if(isinstance(value[i], Temperature)):
-                    yield key, value[i].value_localized
+        for prop in dir(self):
+            if(prop[:2] != "__"):
+                value = getattr(self, prop)
+                prop = underscore(prop)
+                if(any([isinstance(value, bool), isinstance(value, int)])):
+                    yield prop, value
+                elif(isinstance(value, BaseType)):
+                    yield prop, value.value_localized
+                elif(isinstance(value, Time)):
+                    yield prop, str(value)
+                elif(isinstance(value, RemoteEnable)):
+                    for v in value:
+                        yield v
+                elif (isinstance(value, list)):
+                    for i in range(len(value)):
+                        key = "{0}_{1}".format(
+                            prop, (i+1)) if len(value) > 1 else prop
+                        if(isinstance(value[i], Temperature)):
+                            yield key, value[i].value_localized
 
 
 class XkmIdentLabel:
@@ -253,6 +264,7 @@ class XkmIdentLabel:
     def __init__(self, techType, releaseVersion, **kwargs: Any):
         self.techType = techType
         self.releaseVersion = releaseVersion
+
 
 class DeviceIdentLabel:
     __slots__ = "fabNumber", "fabIndex", "techType", "matNumber", "swids"
@@ -264,6 +276,7 @@ class DeviceIdentLabel:
         self.matNumber = matNumber
         self.swids = swids
 
+
 class Ident:
     __slots__ = "type", "deviceName", "deviceIdentLabel", "xkmIdentLabel"
 
@@ -273,11 +286,12 @@ class Ident:
         self.deviceIdentLabel = DeviceIdentLabel(**deviceIdentLabel)
         self.xkmIdentLabel = XkmIdentLabel(**xkmIdentLabel)
 
+
 class Device:
     __slots__ = "id", "ident", "state", "type"
 
     def __init__(self, id, *, ident, state, **kwargs: Any):
-        self.id = id;
+        self.id = id
         self.ident = Ident(**ident)
         self.state = State(self.ident.type.value_raw, **state)
         self.type = self.ident.type.value
