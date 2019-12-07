@@ -1,9 +1,9 @@
 {
     "domain": "miele",
-    "name": "Miele Open API",
+    "name": "Miele@home",
     "config_flow": true,
     "documentation": "https://www.home-assistant.io/integrations/miele",
     "dependencies": ["http"],
-    "codeowners": ["@tetienne"],
+    "codeowners": ["@minzel"],
     "requirements": ["inflection==0.3.1"]
   }

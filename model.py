@@ -2,7 +2,7 @@ from typing import List, Any
 from datetime import time
 from enum import Enum, unique
 from inflection import underscore
-
+from datetime import datetime, timedelta
 
 @unique
 class Type(Enum):
@@ -40,7 +40,7 @@ class Type(Enum):
     wine_cabinet_freezer_combination = 68
 
 
-Status = {
+status = {
     1: "off",
     2: "on",
     3: "programmed",
@@ -60,14 +60,14 @@ Status = {
     255: "not_connected"
 }
 
-ProgramType = {
+programType = {
     0: "normal_operation_mode",
     1: "own_program",
     2: "automatic_program",
     3: "cleaning_care_program"
 }
 
-ProgramPhase = {
+programPhase = {
     # washing machine
     256: "not_running",
     257: "pre_wash",
@@ -127,7 +127,7 @@ ProgramPhase = {
     1801: "pre_wash",
 }
 
-DryingStep = {
+dryingStep = {
     0: "extra_dry",
     1: "normal_plus",
     2: "normal",
@@ -137,7 +137,7 @@ DryingStep = {
     6: "machine_iron"
 }
 
-VentilationStep = {
+ventilationStep = {
     0: "off",
     1: "step_1",
     2: "step_2",
@@ -154,7 +154,10 @@ class BaseType:
         self.value_raw = value_raw
         self.value_localized = value_localized
 
-        if(type == "Type"):
+        # fallback (e.g. spinningSpeed) -- maybe plateStep too
+        if(type in ["ProgramID", "spinningSpeed", "plateStep"]):
+            self.value = self.value_localized
+        elif(type == "Type"):
             self.value = globals()[type](self.value_raw).name
         else:
             self.value = globals()[type].get(self.value_raw, "unknown")
@@ -194,68 +197,66 @@ class RemoteEnable:
 
 
 class State():
-    __slots__ = "programId", "status", "programType", "programPhase", "remainingTime", "startTime", "targetTemperature", "temperature", "signalInfo", "signalFailure", "signalDoor", "remoteEnable", "light", "elapsedTime", "spinningSpeed", "dryingStep", "ventilationStep", "plateStep"
 
-    def __init__(self, deviceType, *, ProgramID, status, programType, programPhase, remainingTime, startTime, targetTemperature, temperature, signalInfo, signalFailure, signalDoor, remoteEnable, light, elapsedTime, spinningSpeed, dryingStep, ventilationStep, plateStep, **kwargs: Any):
+    def __init__(self, deviceType, **kwargs: Any):
 
-        self.programId = BaseType("Status", **ProgramID)
-        self.status = BaseType("Status", **status)
-        self.programType = BaseType("ProgramType", **programType)
-        self.programPhase = BaseType("ProgramPhase", **programPhase)
-        self.remainingTime = Time(*remainingTime)
-        self.startTime = Time(*startTime)
+        __slots__ = "state"
 
-        self.targetTemperature = []
-        targetTemperatures = [Temperature(**t) for t in targetTemperature]
-        for i in range(len(targetTemperatures)):
-                # if a temperature is not used/existing, its corresponding value is set to -32768.
-            if(targetTemperatures[i].value_raw != -32768):
-                self.targetTemperature.append(targetTemperatures[i])
+        for key, value in kwargs.items():
 
-        self.temperature = []
-        for temperatureObj in [Temperature(**t) for t in temperature]:
-            # if a temperature is not used/existing, its corresponding value is set to -32768.
-            if(temperatureObj.value_raw != -32768):
-                self.temperature.append(temperatureObj)
+            if(any([isinstance(value, bool), isinstance(value, int)])):
+                setattr(self, key, value)
 
-        self.signalInfo = signalInfo
-        self.signalFailure = signalFailure
-        self.signalDoor = signalDoor
-        self.remoteEnable = RemoteEnable(**remoteEnable)
-        self.light = light
-        self.elapsedTime = Time(*elapsedTime)
-        self.plateStep = plateStep
-        self.spinningSpeed = BaseType("Status", **spinningSpeed)
-        # this field is only valid for tumble dryers (2) and washer-dryer (24) combinations
-        self.dryingStep = BaseType(
-            "DryingStep", **dryingStep) if deviceType in [2, 24] else None
-        # this field is only valid for hoods (18)
-        self.ventilationStep = BaseType(
-            "VentilationStep", **ventilationStep) if deviceType in [18] else None
+            elif(key in ["ProgramID", "status", "programType", "programPhase", "spinningSpeed"]):
+                if isinstance(value, dict):
+                    obj = BaseType(key, **value)
+                    setattr(self, key, obj.value_localized)
+                    if(key == "status"):
+                        self.state = obj.value
+                else:
+                    # fallback (e.g. spinningSpeed)
+                    setattr(self, key, value)
+
+            elif(key == "dryingStep"):
+                # this field is only valid for tumble dryers (2) and washer-dryer (24) combinations
+                setattr(self, key, BaseType(key, **value).value_localized) if deviceType in [2, 24] else None
+
+            elif(key == "ventilationStep"):
+                # this field is only valid for hoods (18)
+                setattr(self, key, BaseType(key, **value).value_localized) if deviceType in [18] else None
+
+            elif(key == "remoteEnable"):
+                for k, v in RemoteEnable(**value):
+                    setattr(self, k, v) if v else None
+
+            elif(key in ["remainingTime", "startTime", "elapsedTime"]):
+                setattr(self, key, Time(*value)) if value else None
+
+            elif("temperature" in key.lower()):
+                if(isinstance(value, list)):
+                    targetTemperatures = []
+                    for t in [Temperature(**t) for t in value]:
+                        if(t.value_raw != -32768):
+                            targetTemperatures.append(t)
+                    for i in range(len(targetTemperatures)):
+                        value_localized = targetTemperatures[i].value_localized
+                        name = "{0}_{1}".format(
+                            key, (i+1)) if len(targetTemperatures) > 1 else key
+                        setattr(self, name, value_localized)
+                else:
+                    setattr(self, key, value["value_localized"]) if value["value_raw"] != -32768 else None
+        
+        delta = timedelta(hours=self.remainingTime.hour, minutes=self.remainingTime.minute);
+        setattr(self, "finishTime", (datetime.now() + delta).strftime('%H:%M'))
+        
 
     def __str__(self):
-        return self.status.value
+        return self.state
 
     def __iter__(self):
         for prop in dir(self):
-            if(prop[:2] != "__"):
-                value = getattr(self, prop)
-                prop = underscore(prop)
-                if(any([isinstance(value, bool), isinstance(value, int)])):
-                    yield prop, value
-                elif(isinstance(value, BaseType)):
-                    yield prop, value.value_localized
-                elif(isinstance(value, Time)):
-                    yield prop, str(value)
-                elif(isinstance(value, RemoteEnable)):
-                    for v in value:
-                        yield v
-                elif (isinstance(value, list)):
-                    for i in range(len(value)):
-                        key = "{0}_{1}".format(
-                            prop, (i+1)) if len(value) > 1 else prop
-                        if(isinstance(value[i], Temperature)):
-                            yield key, value[i].value_localized
+            if(prop[:2] != "__" and prop != "state"):
+                yield underscore(prop), str(getattr(self, prop))
 
 
 class XkmIdentLabel:
