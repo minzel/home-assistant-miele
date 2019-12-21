@@ -2,7 +2,7 @@
 Support for Miele Devices.
 """
 
-from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, MieleDevice, DEVICES, API
+from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, DEVICES, API
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -31,7 +31,6 @@ class MieleSensor(MieleEntity):
     def __init__(self, device, hass):
         api = hass.data[DOMAIN][API]
         super().__init__(device, api, hass)
-        self.miele = MieleDevice(self.device, self.api)
 
     @property
     def state(self):
@@ -39,4 +38,3 @@ class MieleSensor(MieleEntity):
 
     async def async_update(self):
         await super().async_update()
-        self.miele = MieleDevice(self.device, self.api)

@@ -27,8 +27,7 @@ class MieleApi:
         self.client_secret = client_secret
         self.token_updater = token_updater
 
-        extra = {"client_id": self.client_id,
-                 "client_secret": self.client_secret}
+        extra = {"client_id": self.client_id, "client_secret": self.client_secret}
 
         self._oauth = OAuth2Session(
             client_id=client_id,

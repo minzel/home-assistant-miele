@@ -167,11 +167,4 @@ class MieleEntity(Entity):
     async def async_update(self):
         await update_all_devices(self.hass)
         devices = self.hass.data[DOMAIN][DEVICES]
-        self.device = next((d for d in devices if d.id ==
-                            self.device.id), self.device)
-
-
-class MieleDevice:
-    def __init__(self, device, api):
-        self.device = device
-        self.api = api
+        self.device = next((d for d in devices if d.id == self.device.id), self.device)
