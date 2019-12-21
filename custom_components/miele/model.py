@@ -256,7 +256,7 @@ class State():
     def __iter__(self):
         for prop in dir(self):
             if(prop[:2] != "__" and prop != "state"):
-                yield underscore(prop), str(getattr(self, prop))
+                yield underscore(prop), getattr(self, prop)
 
 
 class XkmIdentLabel:

@@ -122,14 +122,13 @@ async def update_all_devices(hass):
 
 
 class MieleEntity(Entity):
-    def __init__(self, device, miele_api, hass):
+    def __init__(self, device, prop, value, miele_api, hass):
         self.device = device
+        self.prop = prop
+        self.value = value
         self.api = miele_api
 
-        config = hass.data[MIELE_CONFIG]
-
-        prefix = config.get(CONF_OBJECT_PREFIX)
-        self.unqiue_id = "{0}_{1}_{2}".format(prefix, self.device.type, self.device.id)
+        self.unqiue_id = "{0}_{1}_{2}".format(self.device.type, self.device.id, self.prop)
 
     @property
     def unique_id(self):
@@ -138,6 +137,10 @@ class MieleEntity(Entity):
     @property
     def name(self):
         return self.unqiue_id
+
+    @property
+    def state(self):
+        return self.value
 
     async def async_update(self):
         await update_all_devices(self.hass)
