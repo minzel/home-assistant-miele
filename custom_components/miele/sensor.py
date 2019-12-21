@@ -8,14 +8,14 @@ from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, DEVICES, API
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Miele device platform."""
 
-    def get_sensors():
+    def get_devices():
         devices = hass.data[DOMAIN][DEVICES]
         return [
             MieleSensor(device, hass)
             for device in devices
         ]
 
-    async_add_entities(await hass.async_add_executor_job(get_sensors), True)
+    async_add_entities(await hass.async_add_executor_job(get_devices), True)
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
