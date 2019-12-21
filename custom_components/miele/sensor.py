@@ -11,8 +11,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     def get_sensors():
         devices = hass.data[DOMAIN][DEVICES]
         return [
-            MieleSensor(miele, hass)
-            for miele in devices
+            MieleSensor(device, hass)
+            for device in devices
         ]
 
     async_add_entities(await hass.async_add_executor_job(get_sensors), True)

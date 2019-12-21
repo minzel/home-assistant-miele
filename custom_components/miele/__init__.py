@@ -52,7 +52,6 @@ CONFIG_SCHEMA = vol.Schema(
 
 MIELE_COMPONENTS = ["sensor"]
 
-
 async def async_setup(hass, config):
     hass.data[DOMAIN] = {}
     hass.data[MIELE_CONFIG] = config.get(DOMAIN, {})
@@ -159,8 +158,8 @@ class MieleEntity(Entity):
             'gateway_version': self.device.ident.xkmIdentLabel.releaseVersion
         }
 
-        for key, value in self.device.state:
-            attrs[key] = value
+        #for key, value in self.device.state:
+        #    attrs[key] = value
 
         return attrs
 
