@@ -130,21 +130,13 @@ class MieleEntity(Entity):
 
     @property
     def unique_id(self):
-        return f"{self.device.id}_{self.prop}"
-
-    @property
-    def serial(self):
-        return self.device.id if self.device.id is None else None
-
-#    @property
-#    def state(self):
-#        return self.value
+        return f"{self.device.type}_{self.device.id}_{self.prop}"
 
     @property
     def device_info(self):
         return {
             "identifiers": {(DOMAIN, self.device.id)},
-            "name": self.name,
+            "name": "lala",
             "model": self.device.ident.deviceIdentLabel.techType,
             "manufacturer": "Miele"
         }
@@ -159,10 +151,9 @@ class MieleDevice(MieleEntity):
     def __init__(self, device, prop, value, hass):
         super().__init__(device, prop, value)
 
-
     @property
     def name(self):
-        return self.prop
+        return self.unique_id
 
     #@property
     #def device_state_attributes(self):

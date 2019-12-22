@@ -5,10 +5,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     def get_sensors():
         devices = hass.data[DOMAIN][DEVICES]
         return [
-            MieleSensor(device, prop, value, hass)
+            MieleSensor(device, key, value, hass)
             for device in devices
-                for prop, value in device.state
-                if not isinstance(value, bool)
+                for key, value in device.state
+                if not isinstance(value.state, bool)
         ]
 
     async_add_entities(await hass.async_add_executor_job(get_sensors), True)
@@ -17,7 +17,15 @@ class MieleSensor(MieleDevice):
 
     @property
     def state(self):
-        return self.value
+        return self.value.state
+
+    @property
+    def device_class(self):
+        return self.value.device_class
+
+    @property
+    def unit_of_measurement(self):
+        return self.value.unit_of_measurement
 
 #    def __init__(self, device, prop, value, hass):
 #        api = hass.data[DOMAIN][API]

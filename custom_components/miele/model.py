@@ -39,7 +39,6 @@ class Type(Enum):
     dialogoven = 67
     wine_cabinet_freezer_combination = 68
 
-
 status = {
     1: "off",
     2: "on",
@@ -145,7 +144,6 @@ ventilationStep = {
     4: "step_4"
 }
 
-
 class BaseType:
     __slots__ = "key_localized", "value_raw", "value_localized", "value"
 
@@ -162,7 +160,6 @@ class BaseType:
         else:
             self.value = globals()[type].get(self.value_raw, "unknown")
 
-
 class Temperature:
     __slots__ = "value_raw", "value_localized", "unit"
 
@@ -170,7 +167,6 @@ class Temperature:
         self.value_raw = value_raw
         self.value_localized = value_localized
         self.unit = unit
-
 
 class Time:
     __slots__ = "hour", "minute"
@@ -181,7 +177,6 @@ class Time:
 
     def __str__(self):
         return time(self.hour, self.minute).strftime('%H:%M')
-
 
 class RemoteEnable:
     __slots__ = "fullRemoteControl", "smartGrid"
@@ -195,42 +190,58 @@ class RemoteEnable:
             if(prop[:2] != "__"):
                 yield underscore(prop), getattr(self, prop)
 
+class Sensor():
+
+  __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement"
+
+  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None):
+        self.friendly_name = friendly_name
+        self.state = state
+        self.device_class = device_class
+        self.unit_of_measurement = unit_of_measurement
 
 class State():
 
     def __init__(self, deviceType, **kwargs: Any):
 
-        __slots__ = "state"
-
         for key, value in kwargs.items():
 
             if(any([isinstance(value, bool), isinstance(value, int)])):
-                setattr(self, key, value)
+                friendly_name = underscore(key)
+                setattr(self, key, Sensor(friendly_name, value))
 
             elif(key in ["ProgramID", "status", "programType", "programPhase", "spinningSpeed"]):
-                if isinstance(value, dict):
-                    obj = BaseType(key, **value)
-                    setattr(self, key, obj.value_localized)
-                    if(key == "status"):
+                obj = BaseType(key, **value);
+                setattr(self, key, Sensor(obj.key_localized, obj.value_localized))
+                if(key == "status"):
                         self.state = obj.value
-                else:
-                    # fallback (e.g. spinningSpeed)
-                    setattr(self, key, value)
 
             elif(key == "dryingStep"):
                 # this field is only valid for tumble dryers (2) and washer-dryer (24) combinations
-                setattr(self, key, BaseType(key, **value).value_localized) if deviceType in [2, 24] else None
+                if deviceType in [2, 24]:
+                  obj = BaseType(key, **value)
+                  setattr(self, key, Sensor(obj.key_localized, obj.value_localized))
 
             elif(key == "ventilationStep"):
                 # this field is only valid for hoods (18)
-                setattr(self, key, BaseType(key, **value).value_localized) if deviceType in [18] else None
+                if deviceType in [18]:
+                  obj = BaseType(key, **value)
+                  setattr(self, key, Sensor(obj.key_localized, obj.value_localized)) if deviceType in [18] else None
 
             elif(key == "remoteEnable"):
                 for k, v in RemoteEnable(**value):
-                    setattr(self, k, v) if v else None
+
+                    setattr(self, k, Sensor(k, v)) if v else None
 
             elif(key in ["remainingTime", "startTime", "elapsedTime"]):
-                setattr(self, key, Time(*value)) if value else None
+                if value is not None:
+                  state = Time(*value)
+                  friendly_name = underscore(key)
+                  setattr(self, key, Sensor(friendly_name, state))
+
+                  if(key == "remainingTime"):
+                    delta = timedelta(hours=state.hour, minutes=state.minute)
+                    setattr(self, "finishTime", Sensor("finish_time", (datetime.now() + delta).strftime('%H:%M')))
 
             elif("temperature" in key.lower()):
                 if(isinstance(value, list)):
@@ -240,15 +251,12 @@ class State():
                             targetTemperatures.append(t)
                     for i in range(len(targetTemperatures)):
                         value_localized = targetTemperatures[i].value_localized
-                        name = "{0}_{1}".format(
-                            key, (i+1)) if len(targetTemperatures) > 1 else key
-                        setattr(self, name, value_localized)
+                        name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
+                        friendly_name = underscore(name)
+                        setattr(self, name, Sensor(friendly_name, value_localized, "temperature", "°C"))
                 else:
-                    setattr(self, key, value["value_localized"]) if value["value_raw"] != -32768 else None
-        
-        delta = timedelta(hours=self.remainingTime.hour, minutes=self.remainingTime.minute);
-        setattr(self, "finishTime", (datetime.now() + delta).strftime('%H:%M'))
-        
+                    friendly_name = underscore(key)
+                    setattr(self, key, Sensor(friendly_name, value["value_localized"], "temperature", "°C")) if value["value_raw"] != -32768 else None
 
     def __str__(self):
         return self.state
@@ -258,14 +266,12 @@ class State():
             if(prop[:2] != "__" and prop != "state"):
                 yield underscore(prop), getattr(self, prop)
 
-
 class XkmIdentLabel:
     __slots__ = "techType", "releaseVersion"
 
     def __init__(self, techType, releaseVersion, **kwargs: Any):
         self.techType = techType
         self.releaseVersion = releaseVersion
-
 
 class DeviceIdentLabel:
     __slots__ = "fabNumber", "fabIndex", "techType", "matNumber", "swids"
@@ -277,7 +283,6 @@ class DeviceIdentLabel:
         self.matNumber = matNumber
         self.swids = swids
 
-
 class Ident:
     __slots__ = "type", "deviceName", "deviceIdentLabel", "xkmIdentLabel"
 
@@ -286,7 +291,6 @@ class Ident:
         self.deviceName = deviceName
         self.deviceIdentLabel = DeviceIdentLabel(**deviceIdentLabel)
         self.xkmIdentLabel = XkmIdentLabel(**xkmIdentLabel)
-
 
 class Device:
     __slots__ = "id", "ident", "state", "type"
