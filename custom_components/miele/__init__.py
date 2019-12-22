@@ -97,7 +97,6 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
 
     return True
 
-
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry):
     hass.data[DOMAIN].pop(API, None)
 
@@ -122,55 +121,54 @@ async def update_all_devices(hass):
 
 
 class MieleEntity(Entity):
-    def __init__(self, device, prop, value, miele_api, hass):
+    def __init__(self, device, prop, value):
         self.device = device
         self.prop = prop
         self.value = value
-        self.api = miele_api
 
-        self.unqiue_id = "{0}_{1}_{2}".format(self.device.type, self.device.id, self.prop)
+        #self.unqiue_id = "{0}_{1}_{2}".format(self.device.type, self.device.id, self.prop)
 
     @property
     def unique_id(self):
-        return self.unqiue_id
+        return f"{self.device.id}_{self.prop}"
 
     @property
-    def name(self):
-        return self.unqiue_id
+    def serial(self):
+        return self.device.id if self.device.id is None else None
 
-    @property
-    def state(self):
-        return self.value
-
-    async def async_update(self):
-        await update_all_devices(self.hass)
-        devices = self.hass.data[DOMAIN][DEVICES]
-        self.device = next((d for d in devices if d.id == self.device.id), self.device)
-
-class MieleDevice:
-    def __init__(self, device, api):
-        self.device = device
-        self.api = api
+#    @property
+#    def state(self):
+#        return self.value
 
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.unique_id)},
+            "identifiers": {(DOMAIN, self.device.id)},
             "name": self.name,
             "model": self.device.ident.deviceIdentLabel.techType,
             "manufacturer": "Miele"
         }
 
+#    async def async_update(self):
+#        await update_all_devices(self.hass)
+#        devices = self.hass.data[DOMAIN][DEVICES]
+#        self.device = next((d for d in devices if d.id == self.device.id), self.device)
+
+class MieleDevice(MieleEntity):
+
+    def __init__(self, device, prop, value, hass):
+        super().__init__(device, prop, value)
+
+
     @property
-    def device_state_attributes(self):
-        attrs = {
-            'model': self.device.ident.deviceIdentLabel.techType,
-            'serial_number': self.device.id,
-            'gateway_type': self.device.ident.xkmIdentLabel.techType,
-            'gateway_version': self.device.ident.xkmIdentLabel.releaseVersion
-        }
+    def name(self):
+        return self.prop
 
-        #for key, value in self.device.state:
-        #    attrs[key] = value
-
-        return attrs
+    #@property
+    #def device_state_attributes(self):
+    #    return {
+    #        'model': self.device.ident.deviceIdentLabel.techType,
+    #        'serial_number': self.device.id,
+    #        'gateway_type': self.device.ident.xkmIdentLabel.techType,
+    #        'gateway_version': self.device.ident.xkmIdentLabel.releaseVersion
+    #    }

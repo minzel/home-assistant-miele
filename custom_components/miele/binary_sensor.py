@@ -1,0 +1,2 @@
+from homeassistant.components.binary_sensor import BinarySensorDevice
+
