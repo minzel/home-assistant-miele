@@ -1,4 +1,4 @@
-from custom_components.miele import DOMAIN as DOMAIN, MieleDevice, DEVICES, API
+from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, DEVICES, API
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
 
@@ -13,23 +13,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities(await hass.async_add_executor_job(get_sensors), True)
 
-class MieleSensor(MieleDevice):
+class MieleSensor(MieleEntity):
 
     @property
     def state(self):
-        return self.value.state
-
-    @property
-    def device_class(self):
-        return self.value.device_class
+        return self.sensor.state
 
     @property
     def unit_of_measurement(self):
-        return self.value.unit_of_measurement
+        return self.sensor.unit_of_measurement
 
-#    def __init__(self, device, prop, value, hass):
-#        api = hass.data[DOMAIN][API]
-#        super().__init__(device, prop, value, api, hass)
+    @property
+    def device_class(self):
+        return self.sensor.device_class
 
-#    async def async_update(self):
-#        await super().async_update()
+    async def async_update(self):
+        await super().async_update()

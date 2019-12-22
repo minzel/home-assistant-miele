@@ -108,7 +108,6 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry):
     )
     return True
 
-
 @Throttle(SCAN_INTERVAL)
 async def update_all_devices(hass):
     """Update all the devices."""
@@ -119,47 +118,43 @@ async def update_all_devices(hass):
     except HTTPError as err:
         _LOGGER.warning("Cannot update devices: %s", err.response.status_code)
 
-
 class MieleEntity(Entity):
-    def __init__(self, device, prop, value):
+    def __init__(self, device, prop, sensor, hass):
         self.device = device
         self.prop = prop
-        self.value = value
-
-        #self.unqiue_id = "{0}_{1}_{2}".format(self.device.type, self.device.id, self.prop)
+        self.sensor = sensor
+        self.hass = hass
 
     @property
-    def unique_id(self):
-        return f"{self.device.type}_{self.device.id}_{self.prop}"
+    def name(self):
+        return self.sensor.friendly_name
+
+    @property
+    def entity_id(self):
+        return f"sensor.{self.device.type}_{self.device.id}_{self.prop}"
 
     @property
     def device_info(self):
         return {
             "identifiers": {(DOMAIN, self.device.id)},
-            "name": "lala",
+            "name": self.device.ident.type.value_localized,
             "model": self.device.ident.deviceIdentLabel.techType,
             "manufacturer": "Miele"
         }
 
-#    async def async_update(self):
-#        await update_all_devices(self.hass)
-#        devices = self.hass.data[DOMAIN][DEVICES]
-#        self.device = next((d for d in devices if d.id == self.device.id), self.device)
+    async def async_update(self):
+        await update_all_devices(self.hass)
+        devices = self.hass.data[DOMAIN][DEVICES]
+        self.device = next((d for d in devices if d.id == self.device.id), self.device)
+        self.sensor = next((v for k, v in self.device.state if k == self.prop), self.sensor)
 
 class MieleDevice(MieleEntity):
 
-    def __init__(self, device, prop, value, hass):
-        super().__init__(device, prop, value)
-
     @property
-    def name(self):
-        return self.unique_id
-
-    #@property
-    #def device_state_attributes(self):
-    #    return {
-    #        'model': self.device.ident.deviceIdentLabel.techType,
-    #        'serial_number': self.device.id,
-    #        'gateway_type': self.device.ident.xkmIdentLabel.techType,
-    #        'gateway_version': self.device.ident.xkmIdentLabel.releaseVersion
-    #    }
+    def device_state_attributes(self):
+        return {
+            'model': self.device.ident.deviceIdentLabel.techType,
+            'serial_number': self.device.id,
+            'gateway_type': self.device.ident.xkmIdentLabel.techType,
+            'gateway_version': self.device.ident.xkmIdentLabel.releaseVersion
+        }
