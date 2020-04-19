@@ -1,9 +1,9 @@
-# Miele@home custom component
+# Home Assistant Miele@home
 
 [![GitHub Release][releases-shield]][releases]
 [![hacs_badge][hacs-shield]][hacs]
 
-_Homeassistant Custom Component sensors provides miele devices from the [Miele 3rd Party API](https://www.miele.com/developer)._
+_Home Assistant Miele@home sensors provides miele devices from the [Miele 3rd Party API](https://www.miele.com/developer)._
 
 ## Installation
 
