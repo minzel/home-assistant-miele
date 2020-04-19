@@ -136,13 +136,6 @@ class MieleEntity(Entity):
             self._sensor_id += f"_{self._prop}"
 
     @property
-    def name(self):
-        return self._sensor_id
-    
-    def friendly_name(self):
-        return self._sensor.friendly_name
-    
-    @property
     def unique_id(self):
         return self._sensor_id
 

@@ -194,12 +194,12 @@ class Sensor():
 
   __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement", "attributes"
 
-  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None, attributes = None):
+  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None, attributes = []):
         self.friendly_name = friendly_name
         self.state = state
         self.device_class = device_class
         self.unit_of_measurement = unit_of_measurement
-        self.attributes = attributes
+        self.attributes = { 'friendly_name': friendly_name }
 
 class State():
 
@@ -302,9 +302,10 @@ class Device:
         self.state = State(self.ident.type.value_raw, **state)
         self.type = self.ident.type.value
 
-        self.state.status.attributes = {
+        self.state.status.attributes.update({
             'model': self.ident.deviceIdentLabel.techType,
             'serial_number': self.id,
             'gateway_type': self.ident.xkmIdentLabel.techType,
-            'gateway_version': self.ident.xkmIdentLabel.releaseVersion
-        }
+            'gateway_version': self.ident.xkmIdentLabel.releaseVersion,
+        })
+
