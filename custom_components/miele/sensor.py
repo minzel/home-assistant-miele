@@ -17,15 +17,15 @@ class MieleSensor(MieleEntity):
 
     @property
     def state(self):
-        return self.sensor.state
+        return self._sensor.state
 
     @property
     def unit_of_measurement(self):
-        return self.sensor.unit_of_measurement
+        return self._sensor.unit_of_measurement
 
     @property
     def device_class(self):
-        return self.sensor.device_class
+        return self._sensor.device_class
 
     async def async_update(self):
         await super().async_update()

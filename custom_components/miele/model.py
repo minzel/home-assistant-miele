@@ -192,13 +192,14 @@ class RemoteEnable:
 
 class Sensor():
 
-  __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement"
+  __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement", "attributes"
 
-  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None):
+  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None, attributes = None):
         self.friendly_name = friendly_name
         self.state = state
         self.device_class = device_class
         self.unit_of_measurement = unit_of_measurement
+        self.attributes = attributes
 
 class State():
 
@@ -300,3 +301,10 @@ class Device:
         self.ident = Ident(**ident)
         self.state = State(self.ident.type.value_raw, **state)
         self.type = self.ident.type.value
+
+        self.state.status.attributes = {
+            'model': self.ident.deviceIdentLabel.techType,
+            'serial_number': self.id,
+            'gateway_type': self.ident.xkmIdentLabel.techType,
+            'gateway_version': self.ident.xkmIdentLabel.releaseVersion
+        }

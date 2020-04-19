@@ -14,9 +14,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import Throttle
-from .const import DOMAIN
 
 from . import api, miele_api, config_flow
+
+from .const import (
+    ATTR_STATUS,
+    DOMAIN,
+)
 
 API = "api"
 
@@ -118,43 +122,51 @@ async def update_all_devices(hass):
     except HTTPError as err:
         _LOGGER.warning("Cannot update devices: %s", err.response.status_code)
 
+
+
 class MieleEntity(Entity):
+
     def __init__(self, device, prop, sensor, hass):
-        self.device = device
-        self.prop = prop
-        self.sensor = sensor
-        self.hass = hass
+        self._device = device
+        self._prop = prop
+        self._sensor = sensor
+        self._hass = hass
+        self._sensor_id = f"sensor.{self._device.type}_{self._device.id}"
+        if(self._prop != ATTR_STATUS):
+            self._sensor_id += f"_{self._prop}"
 
     @property
     def name(self):
-        return self.sensor.friendly_name
-
+        return self._sensor_id
+    
+    def friendly_name(self):
+        return self._sensor.friendly_name
+    
     @property
-    def entity_id(self):
-        return f"sensor.{self.device.type}_{self.device.id}_{self.prop}"
+    def unique_id(self):
+        return self._sensor_id
 
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.device.id)},
-            "name": self.device.ident.type.value_localized,
-            "model": self.device.ident.deviceIdentLabel.techType,
+            "identifiers": {(DOMAIN, self._device.id)},
+            "name": self._device.ident.type.value_localized,
+            "model": self._device.ident.deviceIdentLabel.techType,
             "manufacturer": "Miele"
         }
 
-    async def async_update(self):
-        await update_all_devices(self.hass)
-        devices = self.hass.data[DOMAIN][DEVICES]
-        self.device = next((d for d in devices if d.id == self.device.id), self.device)
-        self.sensor = next((v for k, v in self.device.state if k == self.prop), self.sensor)
-
-class MieleDevice(MieleEntity):
-
     @property
     def device_state_attributes(self):
-        return {
-            'model': self.device.ident.deviceIdentLabel.techType,
-            'serial_number': self.device.id,
-            'gateway_type': self.device.ident.xkmIdentLabel.techType,
-            'gateway_version': self.device.ident.xkmIdentLabel.releaseVersion
-        }
+        return self._sensor.attributes;
+
+    async def async_update(self):
+        await update_all_devices(self._hass)
+        devices = self._hass.data[DOMAIN][DEVICES]
+
+        for device in devices:
+            if device.id == self._device.id:
+                self._device = device
+                for k, v in device.state:
+                    if k == self._prop:
+                        self._sensor = v
+                        break
