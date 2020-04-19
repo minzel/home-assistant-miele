@@ -5,5 +5,5 @@
     "documentation": "https://github.com/minzel/home-assistant-miele",
     "dependencies": ["http"],
     "codeowners": ["@minzel"],
-    "requirements": ["inflection==0.3.1"]
+    "requirements": ["requests_oauthlib==1.3.0", "inflection==0.3.1"]
   }
