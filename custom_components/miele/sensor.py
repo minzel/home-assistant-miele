@@ -1,4 +1,4 @@
-from custom_components.miele import DOMAIN as DOMAIN, MieleEntity, DEVICES, API
+from custom_components.miele import DOMAIN, MieleEntity, DEVICES, API
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
 

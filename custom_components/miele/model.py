@@ -194,12 +194,13 @@ class Sensor():
 
   __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement", "attributes"
 
-  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None, attributes = []):
+  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None):
         self.friendly_name = friendly_name
         self.state = state
         self.device_class = device_class
         self.unit_of_measurement = unit_of_measurement
-        self.attributes = { 'friendly_name': friendly_name }
+        self.attributes = {}
+        #self.attributes = { 'friendly_name': friendly_name } -- better friendly_name support needed
 
 class State():
 
@@ -207,9 +208,15 @@ class State():
 
         for key, value in kwargs.items():
 
-            if(any([isinstance(value, bool), isinstance(value, int)])):
-                friendly_name = underscore(key)
-                setattr(self, key, Sensor(friendly_name, value))
+            if(key in ["signalDoor"]):
+                print(type(value))
+                setattr(self, key, Sensor(underscore(key), value, "door"))
+
+            elif(key in ["signalFailure", "signalInfo"]):
+                setattr(self, key, Sensor(underscore(key), value, "problem"))
+
+            elif(any([isinstance(value, bool), isinstance(value, int)])):
+                setattr(self, key, Sensor(underscore(key), value))
 
             elif(key in ["ProgramID", "status", "programType", "programPhase", "spinningSpeed"]):
                 obj = BaseType(key, **value);
@@ -242,22 +249,44 @@ class State():
 
                   if(key == "remainingTime"):
                     delta = timedelta(hours=state.hour, minutes=state.minute)
-                    setattr(self, "finishTime", Sensor("finish_time", (datetime.now() + delta).strftime('%H:%M')))
+                    setattr(self, "finishTime", Sensor("finish_time", (datetime.now() + delta) if state.hour != 0 and state.minute != 0 else "00:00"))
+
+            # -- api unreliable; temperature raw value -32768 not always set, exclude by device type
+
+            elif("targettemperature" in key.lower()):
+                if(isinstance(value, list)):
+                    targetTemperatures = []
+                    for t in [Temperature(**t) for t in value]:
+                        
+                        targetTemperatures.append(t)
+
+                        if(deviceType in [1]): # washing machine supports only first target temperature
+                            break
+                    
+                    # TODO duplicate code
+                    for i in range(len(targetTemperatures)):
+                        value_localized = (int)(targetTemperatures[i].value_localized)
+                        name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
+                        setattr(self, name, Sensor(underscore(name), value_localized, "temperature", "°C"))
 
             elif("temperature" in key.lower()):
                 if(isinstance(value, list)):
                     targetTemperatures = []
                     for t in [Temperature(**t) for t in value]:
-                        if(t.value_raw != -32768):
-                            targetTemperatures.append(t)
+
+                        if(deviceType in [1]): # washing machine supports no more temperatures
+                            break
+
+                        targetTemperatures.append(t)
+                    
+                    # TODO duplicate code
                     for i in range(len(targetTemperatures)):
-                        value_localized = targetTemperatures[i].value_localized
+                        value_localized = (int)(targetTemperatures[i].value_localized)
                         name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
-                        friendly_name = underscore(name)
-                        setattr(self, name, Sensor(friendly_name, value_localized, "temperature", "°C"))
+                        setattr(self, name, Sensor(underscore(name), value_localized, "temperature", "°C"))
+
                 else:
-                    friendly_name = underscore(key)
-                    setattr(self, key, Sensor(friendly_name, value["value_localized"], "temperature", "°C")) if value["value_raw"] != -32768 else None
+                    setattr(self, key, Sensor(underscore(key), (int)(value["value_localized"]), "temperature", "°C"))
 
     def __str__(self):
         return self.state
@@ -303,9 +332,11 @@ class Device:
         self.type = self.ident.type.value
 
         self.state.status.attributes.update({
-            'model': self.ident.deviceIdentLabel.techType,
-            'serial_number': self.id,
+            'serial_number': self.ident.deviceIdentLabel.fabNumber,
+            'index': self.ident.deviceIdentLabel.fabIndex,
+            'type': self.ident.deviceIdentLabel.techType,
+            'material_number': self.ident.deviceIdentLabel.matNumber,
             'gateway_type': self.ident.xkmIdentLabel.techType,
-            'gateway_version': self.ident.xkmIdentLabel.releaseVersion,
+            'gateway_version': self.ident.xkmIdentLabel.releaseVersion
         })
 

@@ -54,7 +54,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-MIELE_COMPONENTS = ["sensor"]
+MIELE_COMPONENTS = ["sensor", "binary_sensor"]
 
 async def async_setup(hass, config):
     hass.data[DOMAIN] = {}
@@ -131,9 +131,13 @@ class MieleEntity(Entity):
         self._prop = prop
         self._sensor = sensor
         self._hass = hass
-        self._sensor_id = f"sensor.{self._device.type}_{self._device.id}"
+        self._sensor_id = f"{self._device.type}_{self._device.id}"
         if(self._prop != ATTR_STATUS):
             self._sensor_id += f"_{self._prop}"
+
+    @property
+    def name(self):
+        return self._sensor_id
 
     @property
     def unique_id(self):
