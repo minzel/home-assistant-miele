@@ -209,7 +209,6 @@ class State():
         for key, value in kwargs.items():
 
             if(key in ["signalDoor"]):
-                print(type(value))
                 setattr(self, key, Sensor(underscore(key), value, "door"))
 
             elif(key in ["signalFailure", "signalInfo"]):
@@ -244,12 +243,13 @@ class State():
             elif(key in ["remainingTime", "startTime", "elapsedTime"]):
                 if value is not None:
                   state = Time(*value)
-                  friendly_name = underscore(key)
-                  setattr(self, key, Sensor(friendly_name, state))
+                  minutes = int(timedelta(hours=state.hour, minutes=state.minute).seconds / 60)
+
+                  friendly_name = underscore(key.replace("Time", "")) # -- no real timestamps
+                  setattr(self, friendly_name, Sensor(friendly_name, minutes, None, "min"))
 
                   if(key == "remainingTime"):
-                    delta = timedelta(hours=state.hour, minutes=state.minute)
-                    setattr(self, "finishTime", Sensor("finish_time", (datetime.now() + delta) if state.hour != 0 and state.minute != 0 else "00:00"))
+                    setattr(self, "finishTime", Sensor("finish_time", datetime.now() + timedelta(minutes=minutes) if minutes > 0 else "", "timestamp"))
 
             # -- api unreliable; temperature raw value -32768 not always set, exclude by device type
 
@@ -265,9 +265,9 @@ class State():
                     
                     # TODO duplicate code
                     for i in range(len(targetTemperatures)):
-                        value_localized = (int)(targetTemperatures[i].value_localized)
+                        temperature = (int)(targetTemperatures[i].value_localized)
                         name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
-                        setattr(self, name, Sensor(underscore(name), value_localized, "temperature", "°C"))
+                        setattr(self, name, Sensor(underscore(name), temperature if temperature > 0 else "", "temperature", "°C"))
 
             elif("temperature" in key.lower()):
                 if(isinstance(value, list)):
@@ -281,9 +281,9 @@ class State():
                     
                     # TODO duplicate code
                     for i in range(len(targetTemperatures)):
-                        value_localized = (int)(targetTemperatures[i].value_localized)
+                        temperature = (int)(targetTemperatures[i].value_localized)
                         name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
-                        setattr(self, name, Sensor(underscore(name), value_localized, "temperature", "°C"))
+                        setattr(self, name, Sensor(underscore(name), temperature if temperature > 0 else "", "temperature", "°C"))
 
                 else:
                     setattr(self, key, Sensor(underscore(key), (int)(value["value_localized"]), "temperature", "°C"))
