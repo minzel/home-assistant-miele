@@ -242,14 +242,16 @@ class State():
 
             elif(key in ["remainingTime", "startTime", "elapsedTime"]):
                 if value is not None:
+
                   state = Time(*value)
                   minutes = int(timedelta(hours=state.hour, minutes=state.minute).seconds / 60)
 
-                  friendly_name = underscore(key.replace("Time", "")) # -- no real timestamps
-                  setattr(self, friendly_name, Sensor(friendly_name, minutes, None, "min"))
-
                   if(key == "remainingTime"):
                     setattr(self, "finishTime", Sensor("finish_time", datetime.now() + timedelta(minutes=minutes) if minutes > 0 else "", "timestamp"))
+                  else:
+                    friendly_name = underscore(key.replace("Time", "")) # -- no real timestamps
+                    setattr(self, friendly_name, Sensor(friendly_name, minutes, None, "min"))
+
 
             # -- api unreliable; temperature raw value -32768 not always set, exclude by device type
 
