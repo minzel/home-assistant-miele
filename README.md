@@ -1,11 +1,12 @@
 # Home Assistant Miele@home
 
-[![GitHub Release][releases-shield]][releases]
-[![hacs_badge][hacs-shield]][hacs]
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/minzel/home-assistant-miele?style=for-the-badge)
+![GitHub Releases](https://img.shields.io/github/downloads/minzel/home-assistant-miele/latest/total?label=Downloads&style=for-the-badge)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 
 ## Intro
 
-Home Assistant Miele@home sensors provides miele devices from the [Miele 3rd Party API][miele-developer]. There is no configuration needed, it will find all devices over Miele 3rd Party API and add them to Home Assistant.
+Home Assistant Miele@home sensors provides miele devices from the [Miele 3rd Party API][miele-developer]. It will find all devices over Miele 3rd Party API and add them to Home Assistant.
 
 ![Logo](https://raw.githubusercontent.com/minzel/home-assistant-miele/master/images/miele@home.png)
 

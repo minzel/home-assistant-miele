@@ -1,4 +1,4 @@
-from homeassistant.components.binary_sensor import BinarySensorDevice
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from custom_components.miele import DOMAIN, MieleEntity, DEVICES, API
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -14,7 +14,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities(await hass.async_add_executor_job(get_sensors), True)
 
-class MieleBinarySensor(MieleEntity, BinarySensorDevice):
+class MieleBinarySensor(MieleEntity, BinarySensorEntity):
 
     @property
     def state(self):
