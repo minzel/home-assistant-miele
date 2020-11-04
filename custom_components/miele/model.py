@@ -192,9 +192,9 @@ class RemoteEnable:
 
 class Sensor():
 
-  __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement", "attributes"
+    __slots__ = "friendly_name", "state", "device_class", "unit_of_measurement", "attributes"
 
-  def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None):
+    def __init__(self, friendly_name, state, device_class = None, unit_of_measurement = None):
         self.friendly_name = friendly_name
         self.state = state
         self.device_class = device_class
@@ -221,19 +221,19 @@ class State():
                 obj = BaseType(key, **value);
                 setattr(self, key, Sensor(obj.key_localized, obj.value_localized))
                 if(key == "status"):
-                        self.state = obj.value
+                    self.state = obj.value
 
             elif(key == "dryingStep"):
                 # this field is only valid for tumble dryers (2) and washer-dryer (24) combinations
                 if deviceType in [2, 24]:
-                  obj = BaseType(key, **value)
-                  setattr(self, key, Sensor(obj.key_localized, obj.value_localized))
+                    obj = BaseType(key, **value)
+                    setattr(self, key, Sensor(obj.key_localized, obj.value_localized))
 
             elif(key == "ventilationStep"):
                 # this field is only valid for hoods (18)
                 if deviceType in [18]:
-                  obj = BaseType(key, **value)
-                  setattr(self, key, Sensor(obj.key_localized, obj.value_localized)) if deviceType in [18] else None
+                    obj = BaseType(key, **value)
+                    setattr(self, key, Sensor(obj.key_localized, obj.value_localized)) if deviceType in [18] else None
 
             elif(key == "remoteEnable"):
                 for k, v in RemoteEnable(**value):
@@ -241,17 +241,15 @@ class State():
                     setattr(self, k, Sensor(k, v)) if v else None
 
             elif(key in ["remainingTime", "startTime", "elapsedTime"]):
-                if value is not None:
+                if value != [] and value is not None:
+                    state = Time(*value)
+                    minutes = int(timedelta(hours=state.hour, minutes=state.minute).seconds / 60)
 
-                  state = Time(*value)
-                  minutes = int(timedelta(hours=state.hour, minutes=state.minute).seconds / 60)
-
-                  if(key == "remainingTime"):
-                    setattr(self, "finishTime", Sensor("finish_time", datetime.now() + timedelta(minutes=minutes) if minutes > 0 else "", "timestamp"))
-                  else:
-                    friendly_name = underscore(key.replace("Time", "")) # -- no real timestamps
-                    setattr(self, friendly_name, Sensor(friendly_name, minutes, None, "min"))
-
+                    if(key == "remainingTime"):
+                        setattr(self, "finishTime", Sensor("finish_time", datetime.now() + timedelta(minutes=minutes) if minutes > 0 else "", "timestamp"))
+                    else:
+                        friendly_name = underscore(key.replace("Time", "")) # -- no real timestamps
+                        setattr(self, friendly_name, Sensor(friendly_name, minutes, None, "min"))
 
             # -- api unreliable; temperature raw value -32768 not always set, exclude by device type
 
@@ -259,36 +257,35 @@ class State():
                 if(isinstance(value, list)):
                     targetTemperatures = []
                     for t in [Temperature(**t) for t in value]:
-                        
+
+                        if(t.value_localized is None): # not supported temperature
+                            break
+
                         targetTemperatures.append(t)
 
-                        if(deviceType in [1]): # washing machine supports only first target temperature
-                            break
-                    
                     # TODO duplicate code
                     for i in range(len(targetTemperatures)):
-                        temperature = (int)(targetTemperatures[i].value_localized)
+                        temperature = (float)(targetTemperatures[i].value_localized)
                         name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
-                        setattr(self, name, Sensor(underscore(name), temperature if temperature > 0 else "", "temperature", "°C"))
+                        setattr(self, name, Sensor(underscore(name), temperature if temperature > 0 else "", "temperature", "\u00B0C"))
 
             elif("temperature" in key.lower()):
                 if(isinstance(value, list)):
                     targetTemperatures = []
                     for t in [Temperature(**t) for t in value]:
 
-                        if(deviceType in [1]): # washing machine supports no more temperatures
+                        if(t.value_localized is None): # not supported temperature
                             break
 
                         targetTemperatures.append(t)
-                    
+
                     # TODO duplicate code
                     for i in range(len(targetTemperatures)):
-                        temperature = (int)(targetTemperatures[i].value_localized)
+                        temperature = (float)(targetTemperatures[i].value_localized)
                         name = "{0}_{1}".format(key, (i+1)) if len(targetTemperatures) > 1 else key
-                        setattr(self, name, Sensor(underscore(name), temperature if temperature > 0 else "", "temperature", "°C"))
-
+                        setattr(self, name, Sensor(underscore(name), temperature if temperature > 0 else "", "temperature", "\u00B0C"))
                 else:
-                    setattr(self, key, Sensor(underscore(key), (int)(value["value_localized"]), "temperature", "°C"))
+                    setattr(self, key, Sensor(underscore(key), (int)(value["value_localized"]), "temperature", "\u00B0C"))
 
     def __str__(self):
         return self.state
